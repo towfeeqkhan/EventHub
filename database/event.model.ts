@@ -123,11 +123,13 @@ function normalizeTime(value: string): string {
   return `${String(hours24).padStart(2, "0")}:${minutes}`;
 }
 
-eventSchema.pre("save", function handleEventSave(this: EventDocument) {
+eventSchema.pre("validate", function handleEventValidation(this: EventDocument) {
   if (this.isModified("title") || !this.slug) {
     this.slug = slugify(this.title);
   }
+});
 
+eventSchema.pre("save", function handleEventSave(this: EventDocument) {
   this.date = normalizeDate(this.date);
   this.time = normalizeTime(this.time);
 });
