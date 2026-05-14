@@ -38,6 +38,8 @@ const bookingSchema = new Schema<BookingDocument, BookingModel>(
   },
 );
 
+bookingSchema.index({ eventId: 1, email: 1 }, { unique: true });
+
 bookingSchema.pre(
   "save",
   async function handleBookingSave(this: BookingDocument) {
