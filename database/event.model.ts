@@ -52,7 +52,8 @@ const eventSchema = new Schema<EventDocument, EventModel>(
       type: Date,
       required: true,
       validate: {
-        validator: (value: Date) => !Number.isNaN(value.getTime()),
+        validator: (value: unknown) =>
+          value instanceof Date && !Number.isNaN(value.getTime()),
         message: "startsAt must be a valid date",
       },
     },
@@ -103,12 +104,15 @@ eventSchema.pre("validate", function handleEventValidation(this: EventDocument) 
 
 eventSchema.index({ slug: 1 }, { unique: true });
 
-let existingEventModel = models.Event as EventModel | undefined;
+const existingEventModel = models.Event as EventModel | undefined;
+const shouldResetModel =
+  process.env.NODE_ENV !== "production" && Boolean(existingEventModel);
 
-if (process.env.NODE_ENV !== "production" && existingEventModel) {
+if (shouldResetModel) {
   delete models.Event;
-  existingEventModel = undefined;
 }
 
 export const Event =
-  existingEventModel ?? model<EventDocument, EventModel>("Event", eventSchema);
+  shouldResetModel
+    ? model<EventDocument, EventModel>("Event", eventSchema)
+    : existingEventModel ?? model<EventDocument, EventModel>("Event", eventSchema);
