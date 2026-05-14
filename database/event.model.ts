@@ -103,6 +103,13 @@ eventSchema.pre("validate", function handleEventValidation(this: EventDocument) 
 
 eventSchema.index({ slug: 1 }, { unique: true });
 
+const existingEventModel = models.Event as EventModel | undefined;
+
+if (process.env.NODE_ENV !== "production" && existingEventModel) {
+  delete models.Event;
+}
+
 export const Event =
-  (models.Event as EventModel) ||
-  model<EventDocument, EventModel>("Event", eventSchema);
+  process.env.NODE_ENV === "production" && existingEventModel
+    ? existingEventModel
+    : model<EventDocument, EventModel>("Event", eventSchema);
