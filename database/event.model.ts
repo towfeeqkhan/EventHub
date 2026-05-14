@@ -11,8 +11,7 @@ export interface EventDocument extends Document {
   image: string;
   venue: string;
   location: string;
-  date: string;
-  time: string;
+  startsAt: Date;
   mode: string;
   audience: string;
   agenda: EventAgenda;
@@ -49,8 +48,14 @@ const eventSchema = new Schema<EventDocument, EventModel>(
     image: nonEmptyString,
     venue: nonEmptyString,
     location: nonEmptyString,
-    date: nonEmptyString,
-    time: nonEmptyString,
+    startsAt: {
+      type: Date,
+      required: true,
+      validate: {
+        validator: (value: Date) => !Number.isNaN(value.getTime()),
+        message: "Invalid start date",
+      },
+    },
     mode: nonEmptyString,
     audience: nonEmptyString,
     agenda: {
@@ -90,48 +95,10 @@ function slugify(value: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-function normalizeDate(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error("Invalid date format");
-  }
-
-  return parsed.toISOString();
-}
-
-function normalizeTime(value: string): string {
-  const trimmed = value.trim();
-  const twentyFourHour = /^([01]\d|2[0-3]):([0-5]\d)$/;
-  if (twentyFourHour.test(trimmed)) {
-    return trimmed;
-  }
-
-  const twelveHour = /^(\d{1,2}):([0-5]\d)\s*([AaPp][Mm])$/;
-  const match = trimmed.match(twelveHour);
-  if (!match) {
-    throw new Error("Invalid time format");
-  }
-
-  const rawHours = Number.parseInt(match[1], 10);
-  const minutes = match[2];
-  const period = match[3].toLowerCase();
-  if (rawHours < 1 || rawHours > 12) {
-    throw new Error("Invalid time format");
-  }
-
-  const hours24 = (rawHours % 12) + (period === "pm" ? 12 : 0);
-  return `${String(hours24).padStart(2, "0")}:${minutes}`;
-}
-
 eventSchema.pre("validate", function handleEventValidation(this: EventDocument) {
   if (this.isModified("title") || !this.slug) {
     this.slug = slugify(this.title);
   }
-});
-
-eventSchema.pre("save", function handleEventSave(this: EventDocument) {
-  this.date = normalizeDate(this.date);
-  this.time = normalizeTime(this.time);
 });
 
 eventSchema.index({ slug: 1 }, { unique: true });
