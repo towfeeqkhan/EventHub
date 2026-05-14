@@ -96,11 +96,33 @@ function slugify(value: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-eventSchema.pre("validate", function handleEventValidation(this: EventDocument) {
-  if (this.isModified("title") || !this.slug) {
-    this.slug = slugify(this.title);
-  }
-});
+eventSchema.pre(
+  "validate",
+  async function handleEventValidation(this: EventDocument) {
+    if (this.isModified("title") || !this.slug) {
+      const nextSlug = slugify(this.title);
+      this.slug = nextSlug;
+
+      if (!nextSlug) {
+        this.invalidate("slug", "Slug must be a non-empty string");
+        return;
+      }
+
+      const EventModel = this.constructor as EventModel;
+      const existingEvent = await EventModel.exists({
+        slug: nextSlug,
+        _id: { $ne: this._id },
+      });
+
+      if (existingEvent) {
+        this.invalidate(
+          "slug",
+          "An event with this title already exists; please use a different title",
+        );
+      }
+    }
+  },
+);
 
 eventSchema.index({ slug: 1 }, { unique: true });
 
