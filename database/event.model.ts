@@ -104,15 +104,10 @@ eventSchema.pre("validate", function handleEventValidation(this: EventDocument) 
 
 eventSchema.index({ slug: 1 }, { unique: true });
 
-const existingEventModel = models.Event as EventModel | undefined;
-const shouldResetModel =
-  process.env.NODE_ENV !== "production" && Boolean(existingEventModel);
-
-if (shouldResetModel) {
+if (process.env.NODE_ENV !== "production" && models.Event) {
   delete models.Event;
 }
 
 export const Event =
-  shouldResetModel
-    ? model<EventDocument, EventModel>("Event", eventSchema)
-    : existingEventModel ?? model<EventDocument, EventModel>("Event", eventSchema);
+  (models.Event as EventModel | undefined) ??
+  model<EventDocument, EventModel>("Event", eventSchema);
