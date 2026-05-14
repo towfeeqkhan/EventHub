@@ -53,7 +53,7 @@ const eventSchema = new Schema<EventDocument, EventModel>(
       required: true,
       validate: {
         validator: (value: Date) => !Number.isNaN(value.getTime()),
-        message: "Invalid start date",
+        message: "startsAt must be a valid date",
       },
     },
     mode: nonEmptyString,
