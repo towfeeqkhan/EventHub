@@ -6,7 +6,6 @@ import {
   type Document,
   type Types,
 } from "mongoose";
-import { Event } from "./event.model";
 
 export interface BookingDocument extends Document {
   eventId: Types.ObjectId;
@@ -39,16 +38,6 @@ const bookingSchema = new Schema<BookingDocument, BookingModel>(
 );
 
 bookingSchema.index({ eventId: 1, email: 1 }, { unique: true });
-
-bookingSchema.pre(
-  "save",
-  async function handleBookingSave(this: BookingDocument) {
-    const eventExists = await Event.exists({ _id: this.eventId });
-    if (!eventExists) {
-      throw new Error("Referenced event does not exist");
-    }
-  },
-);
 
 export const Booking =
   (models.Booking as BookingModel) ||
